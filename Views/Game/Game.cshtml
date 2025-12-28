@@ -1,0 +1,99 @@
+﻿@model TicTacToe.Models.GameModel
+
+@{
+    ViewData["Title"] = "Tic-Tac-Toe";
+    bool isGameOver = Model.Message.Contains("wins") || Model.Message.Contains("draw");
+}
+
+<style>
+    .game-cell {
+        width: 100px;
+        height: 100px;
+        border: 3px solid #ccc;
+        text-align: center;
+        vertical-align: middle;
+        padding: 0;
+    }
+
+        .game-cell button {
+            width: 100%;
+            height: 100%;
+            background: none;
+            border: none;
+        }
+
+            .game-cell button:hover {
+                background-color: #f0f0f0;
+            }
+
+    .x-marker {
+        color: blue;
+        font-size: 3rem;
+        font-weight: bold;
+    }
+
+    .o-marker {
+        color: red;
+        font-size: 3rem;
+        font-weight: bold;
+    }
+
+    /* Remove outer borders */
+    .game-cell:first-child {
+        border-left: none;
+    }
+
+    .game-cell:last-child {
+        border-right: none;
+    }
+
+    tr:first-child .game-cell {
+        border-top: none;
+    }
+
+    tr:last-child .game-cell {
+        border-bottom: none;
+    }
+</style>
+
+<div class="container mt-5 text-center">
+    <div class="card shadow" style="max-width: 500px; margin: auto;">
+        <div class="card-header bg-white">
+            <h2>Tic Tac Toe</h2>
+        </div>
+        <div class="card-body">
+            <h4 class="mb-4">@Model.Message</h4>
+
+            <form method="post" asp-action="MakeMove" asp-route-id="@ViewBag.GameId">
+                <table class="m-auto" style="border-collapse: collapse;">
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <tr>
+                            @for (int j = 0; j < 3; j++)
+                            {
+                                <td class="game-cell">
+                                    @if (Model.Board[i, j] == ' ' && !isGameOver)
+                                    {
+                                        <button type="submit" name="row" value="@i" formaction="/Game/MakeMove?id=@ViewBag.GameId&row=@i&col=@j">
+                                            &nbsp;
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="@(Model.Board[i, j] == 'X' ? "x-marker" : "o-marker")">
+                                            @Model.Board[i, j]
+                                        </span>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </table>
+            </form>
+        </div>
+        <div class="card-footer">
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            <a asp-action="CreateGame" class="btn btn-primary">New Game</a>
+        </div>
+    </div>
+</div>

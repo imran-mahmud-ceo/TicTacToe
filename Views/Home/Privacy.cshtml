@@ -1,0 +1,115 @@
+﻿@{
+    ViewData["Title"] = "About Developer";
+}
+
+<style>
+    /* Developer Card Styling */
+    .dev-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 40px auto;
+        text-align: center;
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .dev-header {
+        background-color: #2c3e50;
+        /* 👇 CHANGED THIS LINE 👇 */
+        /* Top 20px (moves text up), Bottom 90px (makes room for image) */
+        padding: 20px 20px 90px;
+        color: white;
+    }
+
+        .dev-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+
+    /* Circular Image */
+    .dev-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 5px solid #fff;
+        object-fit: cover;
+        /* This pulls the image up 75px from the bottom of the blue header */
+        margin-top: -75px;
+        background-color: #ddd;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .dev-body {
+        padding: 20px 30px 40px;
+    }
+
+    .dev-name {
+        color: #333;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 15px 0 5px;
+    }
+
+    .dev-role {
+        display: inline-block;
+        background-color: #e67e22; /* Orange accent */
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+
+    .dev-bio {
+        color: #555;
+        font-style: italic;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+
+    .contact-info {
+        background: #fff;
+        border: 1px dashed #ccc;
+        padding: 15px;
+        border-radius: 10px;
+        display: inline-block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .contact-item {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin: 8px 0;
+        font-weight: 600;
+    }
+</style>
+
+<div class="dev-card">
+    <div class="dev-header">
+        <h1>Developer Profile</h1>
+    </div>
+
+    <img src="~/imran.jpg" alt="Imran Mahmud" class="dev-avatar">
+
+    <div class="dev-body">
+        <h2 class="dev-name">Imran Mahmud</h2>
+        <span class="dev-role">Creator & Lead Developer</span>
+
+        <p class="dev-bio">
+            "This game was conceptually designed, developed, and brought to life by me.
+            All intellectual property rights and credits belong to the creator."
+        </p>
+
+        <div class="contact-info">
+            <div class="contact-item">📞 +8801303392175</div>
+            <div class="contact-item">✉️ crownprince.imran@gmail.com</div>
+        </div>
+    </div>
+</div>

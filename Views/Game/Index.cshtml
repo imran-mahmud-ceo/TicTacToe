@@ -1,0 +1,39 @@
+﻿@model IEnumerable<TicTacToe.Models.GameRecord>
+
+@{
+    ViewData["Title"] = "Game History";
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Game History</h1>
+        <a asp-action="CreateGame" class="btn btn-primary btn-lg">Start New Game</a>
+    </div>
+
+    <table class="table table-striped border">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Status</th>
+                <th>Current Player</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var game in Model)
+            {
+                <tr>
+                    <td>@game.Id</td>
+                    <td>@game.Message</td>
+                    <td>@game.CurrentPlayer</td>
+                    <td>@game.CreatedAt</td>
+                    <td>
+                        <a asp-action="Play" asp-route-id="@game.Id" class="btn btn-sm btn-success">Play</a>
+                        <a asp-action="Delete" asp-route-id="@game.Id" class="btn btn-sm btn-danger" onclick="return confirm('Delete this game?');">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
