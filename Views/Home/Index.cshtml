@@ -1,8 +1,49 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mt-5">
+    <h1 class="display-4">Welcome, @User.Identity.Name!</h1>
+    <p class="lead">Choose your game mode to start playing.</p>
+
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100 border-primary">
+                <div class="card-body">
+                    <h3 class="card-title text-primary">Multi Player</h3>
+                    <p class="card-text">Play against a friend on the same device.</p>
+                    <a asp-controller="Game" asp-action="CreateGame" asp-route-difficulty="Human"
+                       class="btn btn-primary btn-lg w-100 mt-3">Play vs Friend</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100 border-danger">
+                <div class="card-body">
+                    <h3 class="card-title text-danger">Single Player (Bot)</h3>
+                    <p class="card-text">Challenge the AI.</p>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <a asp-controller="Game" asp-action="CreateGame" asp-route-difficulty="Easy"
+                           class="btn btn-outline-success">Easy (Random)</a>
+
+                        <a asp-controller="Game" asp-action="CreateGame" asp-route-difficulty="Medium"
+                           class="btn btn-outline-warning text-dark">Medium (Smart)</a>
+
+                        <a asp-controller="Game" asp-action="CreateGame" asp-route-difficulty="Hard"
+                           class="btn btn-outline-danger">Hard (Unbeatable)</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <h3>Your Recent Games</h3>
+        <div id="game-history-container">
+            @await Component.InvokeAsync("GameHistory", new { userId = User.FindFirstValue(ClaimTypes.NameIdentifier) })
+        </div>
+    </div>
 </div>

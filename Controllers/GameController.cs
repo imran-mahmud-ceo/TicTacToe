@@ -1,126 +1,192 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TicTacToe.Models;
-using TicTacToe.Data;
-using System.Linq;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using TicTacToe.Data;
+using TicTacToe.Models;
+using TicTacToe.Services;
 
 namespace TicTacToe.Controllers
 {
+    [Authorize]
     public class GameController : Controller
     {
-        private readonly GameContext _context;
+        private readonly TicTacToeContext _context;
 
-        public GameController(GameContext context)
+        public GameController(TicTacToeContext context)
         {
             _context = context;
         }
 
-        // 1. LIST GAMES (History)
-        // 1. LIST GAMES (History - Finished Only)
-        public IActionResult Index()
+        // --- 1. VIEW GAME ---
+        public IActionResult Index(int? id, string difficulty)
         {
-            // Filter: Only show games where the message does NOT contain the word "turn".
-            // This hides "Player X's turn" (active games) and shows only "Wins" or "Draws".
-            var finishedGames = _context.Games
-                .Where(g => !g.Message.Contains("turn"))
-                .OrderByDescending(g => g.CreatedAt)
-                .ToList();
+            if (id == null) return RedirectToAction("CreateGame");
 
-            return View(finishedGames);
+            var game = _context.GameRecords.FirstOrDefault(g => g.Id == id);
+            if (game == null) return NotFound();
+
+            if (string.IsNullOrEmpty(difficulty))
+            {
+                difficulty = TempData["Difficulty"]?.ToString() ?? "Human";
+            }
+            ViewBag.Difficulty = difficulty;
+            TempData["Difficulty"] = difficulty;
+
+            return View("Game", game);
         }
 
-        // 2. CREATE NEW GAME
-        public IActionResult CreateGame()
+        // --- 2. MENU SCREEN ---
+        public IActionResult VsComputer()
+        {
+            return View();
+        }
+
+        // --- 3. CREATE GAME ---
+        public async Task<IActionResult> CreateGame(string difficulty = "Human")
         {
             var newGame = new GameRecord
             {
-                BoardState = "         ", // 9 spaces
-                CurrentPlayer = 'X',
-                Message = "Player X's turn",
-                CreatedAt = DateTime.Now
+                BoardState = "---------",
+                CreatedAt = DateTime.Now,
+                CurrentPlayer = "X",
+                Message = "Your Turn (X)",
+                UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                Winner = null
             };
 
-            _context.Games.Add(newGame);
-            _context.SaveChanges();
+            _context.GameRecords.Add(newGame);
+            await _context.SaveChangesAsync();
 
-            return RedirectToAction("Play", new { id = newGame.Id });
+            return RedirectToAction("Index", new { id = newGame.Id, difficulty = difficulty });
         }
 
-        // 3. PLAY GAME (The Board)
-        public IActionResult Play(int id)
-        {
-            var gameRecord = _context.Games.Find(id);
-            if (gameRecord == null) return NotFound();
-
-            var model = new GameModel
-            {
-                CurrentPlayer = gameRecord.CurrentPlayer,
-                Message = gameRecord.Message,
-                Board = StringToBoard(gameRecord.BoardState)
-            };
-
-            ViewBag.GameId = gameRecord.Id;
-            return View("Game", model);
-        }
-
-        // 4. MAKE MOVE (Update Game)
+        // --- 4. HUMAN MOVE ---
         [HttpPost]
-        public IActionResult MakeMove(int id, int row, int col)
+        public async Task<IActionResult> PlayMove(int id, int row, int col, string difficulty)
         {
-            var gameRecord = _context.Games.Find(id);
-            if (gameRecord == null) return NotFound();
+            var game = await _context.GameRecords.FindAsync(id);
+            if (game == null) return NotFound();
 
-            var model = new GameModel
+            // Restore difficulty
+            if (string.IsNullOrEmpty(difficulty)) difficulty = "Human";
+            TempData["Difficulty"] = difficulty;
+
+            if (game.Winner != null) return RedirectToAction("Index", new { id = game.Id, difficulty });
+
+            // A. Check if Spot is Taken
+            int index = (row * 3) + col;
+            char[] board = game.BoardState.ToCharArray();
+            if (board[index] != '-') return RedirectToAction("Index", new { id, difficulty });
+
+            // B. Identify Player
+            // If vs Computer, Human is ALWAYS X. If Human vs Human, rely on CurrentPlayer.
+            char markToPlace = char.Parse(game.CurrentPlayer);
+
+            // Security: Prevent Human from playing O in Computer Mode
+            if (difficulty != "Human" && markToPlace == 'O')
             {
-                Board = StringToBoard(gameRecord.BoardState),
-                CurrentPlayer = gameRecord.CurrentPlayer,
-                Message = gameRecord.Message
+                return RedirectToAction("Index", new { id, difficulty });
+            }
+
+            // C. Place Move & Switch Turn
+            board[index] = markToPlace;
+            game.BoardState = new string(board);
+
+            // Switch Turn
+            game.CurrentPlayer = (markToPlace == 'X') ? "O" : "X";
+
+            CheckWinner(game, difficulty);
+            await _context.SaveChangesAsync();
+
+            // STOP! We do NOT run the computer move here anymore.
+            // We return to the View so the user sees "Computer is thinking..."
+            return RedirectToAction("Index", new { id = game.Id, difficulty });
+        }
+
+        // --- 5. COMPUTER MOVE (Triggered by JavaScript) ---
+        [HttpPost]
+        public async Task<IActionResult> ComputerMove(int id, string difficulty)
+        {
+            var game = await _context.GameRecords.FindAsync(id);
+            if (game == null) return NotFound();
+
+            // Restore difficulty
+            if (string.IsNullOrEmpty(difficulty)) difficulty = "Human";
+            TempData["Difficulty"] = difficulty;
+
+            // Only run if it is actually O's turn and game isn't over
+            if (game.CurrentPlayer == "O" && game.Winner == null && difficulty != "Human")
+            {
+                // Optional Server Delay (for realism)
+                await Task.Delay(500);
+
+                int aiIndex = TicTacToeAI.GetBestMove(game.BoardState, difficulty);
+                if (aiIndex != -1)
+                {
+                    char[] aiBoard = game.BoardState.ToCharArray();
+                    aiBoard[aiIndex] = 'O';
+                    game.BoardState = new string(aiBoard);
+
+                    // Switch back to Human
+                    game.CurrentPlayer = "X";
+
+                    CheckWinner(game, difficulty);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return RedirectToAction("Index", new { id = game.Id, difficulty });
+        }
+
+        // --- HELPER: CHECK WINNER ---
+        private void CheckWinner(GameRecord game, string difficulty)
+        {
+            char[] board = game.BoardState.ToCharArray();
+            int[][] wins = new int[][]
+            {
+                new int[] {0,1,2}, new int[] {3,4,5}, new int[] {6,7,8},
+                new int[] {0,3,6}, new int[] {1,4,7}, new int[] {2,5,8},
+                new int[] {0,4,8}, new int[] {2,4,6}
             };
 
-            if (model.MakeMove(row, col))
+            // 1. Check Win
+            foreach (var w in wins)
             {
-                gameRecord.BoardState = BoardToString(model.Board);
-                gameRecord.CurrentPlayer = model.CurrentPlayer;
-                gameRecord.Message = model.Message;
+                if (board[w[0]] != '-' && board[w[0]] == board[w[1]] && board[w[1]] == board[w[2]])
+                {
+                    game.Winner = board[w[0]].ToString();
 
-                _context.Games.Update(gameRecord);
-                _context.SaveChanges();
+                    if (game.Winner == "X")
+                        game.Message = "You Win! 🎉";
+                    else
+                        game.Message = (difficulty == "Human") ? "Player 2 Wins! 👤" : "Computer Wins! 🤖";
+
+                    return;
+                }
             }
 
-            return RedirectToAction("Play", new { id = id });
-        }
-
-        // 5. DELETE GAME
-        public IActionResult Delete(int id)
-        {
-            var game = _context.Games.Find(id);
-            if (game != null)
+            // 2. Check Draw
+            if (!game.BoardState.Contains("-"))
             {
-                _context.Games.Remove(game);
-                _context.SaveChanges();
+                game.Winner = "Draw";
+                game.Message = "It's a Draw! 🤝";
             }
-            return RedirectToAction("Index");
-        }
-
-        // HELPERS
-        private string BoardToString(char[,] board)
-        {
-            char[] flat = new char[9];
-            int k = 0;
-            for (int i = 0; i < 3; i++)
-                for (int j = 0; j < 3; j++)
-                    flat[k++] = board[i, j];
-            return new string(flat);
-        }
-
-        private char[,] StringToBoard(string str)
-        {
-            char[,] board = new char[3, 3];
-            int k = 0;
-            for (int i = 0; i < 3; i++)
-                for (int j = 0; j < 3; j++)
-                    board[i, j] = str[k++];
-            return board;
+            else
+            {
+                // 3. Update Status Message for Next Turn
+                if (game.CurrentPlayer == "X")
+                    game.Message = "Your Turn (X)";
+                else
+                {
+                    if (difficulty == "Human")
+                        game.Message = "Player 2's Turn (O)";
+                    else
+                        game.Message = "Computer is thinking... 🤖";
+                }
+            }
         }
     }
 }

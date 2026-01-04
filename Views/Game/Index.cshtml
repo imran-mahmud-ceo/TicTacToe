@@ -1,39 +1,69 @@
-﻿@model IEnumerable<TicTacToe.Models.GameRecord>
+﻿@model TicTacToe.Models.GameRecord
 
 @{
-    ViewData["Title"] = "Game History";
+    ViewData["Title"] = "Tic Tac Toe";
+    string difficulty = ViewBag.Difficulty?.ToString() ?? "Human";
 }
 
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Game History</h1>
-        <a asp-action="CreateGame" class="btn btn-primary btn-lg">Start New Game</a>
+<div class="text-center mt-5">
+    <h1 class="display-4 mb-3">Tic Tac Toe</h1>
+
+    <div class="d-flex justify-content-center align-items-center mb-4">
+        <span class="badge bg-secondary fs-6 me-2 p-2">Mode: @difficulty</span>
+
+        @if (Model.Winner != null)
+        {
+            <div class="alert alert-success fs-4 px-5 py-2 m-0 border-0 rounded-0">
+                @Model.Message
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info fs-4 px-5 py-2 m-0 border-0 rounded-0"
+                 style="background-color: #d1ecf1; color: #0c5460;">
+                @Model.Message
+            </div>
+        }
     </div>
 
-    <table class="table table-striped border">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Status</th>
-                <th>Current Player</th>
-                <th>Date</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var game in Model)
-            {
-                <tr>
-                    <td>@game.Id</td>
-                    <td>@game.Message</td>
-                    <td>@game.CurrentPlayer</td>
-                    <td>@game.CreatedAt</td>
-                    <td>
-                        <a asp-action="Play" asp-route-id="@game.Id" class="btn btn-sm btn-success">Play</a>
-                        <a asp-action="Delete" asp-route-id="@game.Id" class="btn btn-sm btn-danger" onclick="return confirm('Delete this game?');">Delete</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="row justify-content-center">
+        <div class="col-auto">
+            <div style="display: grid; grid-template-columns: repeat(3, 100px); gap: 15px;">
+                @for (int i = 0; i < 9; i++)
+                {
+                    char cell = Model.BoardState[i];
+
+                    @if (cell == '-')
+                    {
+                        // STATE 1: EMPTY (Show the Button/Rectangle)
+                        <form asp-controller="Game" asp-action="PlayMove" method="post">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="cellIndex" value="@i" />
+                            <input type="hidden" name="difficulty" value="@difficulty" />
+
+                            <button type="submit"
+                                    class="btn btn-light shadow-sm border"
+                                    style="width: 100px; height: 100px; background-color: #f8f9fa;">
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        // STATE 2: FILLED (Button is GONE, only Text remains)
+                        <div class="d-flex justify-content-center align-items-center"
+                             style="width: 100px; height: 100px; background-color: transparent;">
+
+                            <span class="fw-bold display-3 @(cell == 'X' ? "text-danger" : "text-primary")">
+                                @cell
+                            </span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Back to Dashboard</a>
+    </div>
 </div>

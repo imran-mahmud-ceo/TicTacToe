@@ -1,99 +1,266 @@
-﻿@model TicTacToe.Models.GameModel
+﻿@model TicTacToe.Models.GameRecord
 
 @{
     ViewData["Title"] = "Tic-Tac-Toe";
-    bool isGameOver = Model.Message.Contains("wins") || Model.Message.Contains("draw");
+    bool isGameOver = Model.Winner != null;
+    string difficulty = ViewBag.Difficulty as string ?? "Human";
+
+    // SAFETY FIX: If the database has a broken board, default to empty to prevent crash
+    string safeBoard = Model.BoardState ?? "---------";
+    if (safeBoard.Length != 9) { safeBoard = "---------"; }
+    char[] boardChars = safeBoard.ToCharArray();
+
+    // Logic to find winning lines (for highlighting)
+    var winningIndices = new System.Collections.Generic.List<int>();
+    if (Model.Winner != null && Model.Winner != "Draw")
+    {
+        int[][] winCombos = new int[][]
+        {
+            new int[] {0,1,2}, new int[] {3,4,5}, new int[] {6,7,8},
+            new int[] {0,3,6}, new int[] {1,4,7}, new int[] {2,5,8},
+            new int[] {0,4,8}, new int[] {2,4,6}
+        };
+        foreach (var combo in winCombos)
+        {
+            // Ensure indices are within bounds before checking
+            if (boardChars[combo[0]] != '-' &&
+                boardChars[combo[0]] == boardChars[combo[1]] &&
+                boardChars[combo[1]] == boardChars[combo[2]])
+            {
+                winningIndices.AddRange(combo);
+                break;
+            }
+        }
+    }
 }
 
 <style>
-    .game-cell {
+    /* 1. Dark Background */
+    body {
+        background-color: #0f172a !important; /* Dark Blue-Black */
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* 2. Side-by-Side Layout container */
+    .game-container {
+        display: flex;
+        flex-direction: row; /* Horizontal layout */
+        align-items: flex-start; /* Align top */
+        justify-content: center;
+        gap: 60px; /* Big space between board and controls */
+        padding-top: 50px;
+    }
+
+    /* 3. The Board (Glassy & Dark) */
+    .game-board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        background: rgba(255, 255, 255, 0.05); /* Slight transparent white */
+        padding: 20px;
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    /* 4. Cells */
+    .cell-btn {
         width: 100px;
         height: 100px;
-        border: 3px solid #ccc;
-        text-align: center;
-        vertical-align: middle;
+        background-color: #1e293b;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        font-weight: 900;
+        cursor: pointer;
+        border: none;
+        transition: transform 0.2s;
         padding: 0;
+        line-height: 1;
     }
 
-        .game-cell button {
-            width: 100%;
-            height: 100%;
-            background: none;
-            border: none;
+        .cell-btn.empty:hover {
+            background-color: #334155;
         }
 
-            .game-cell button:hover {
-                background-color: #f0f0f0;
-            }
+    /* 5. Colors for X and O */
+    .mark-x {
+        color: #3b82f6; /* Neon Blue */
+        text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
 
-    .x-marker {
-        color: blue;
-        font-size: 3rem;
+    .mark-o {
+        color: #ef4444; /* Neon Red */
+        text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    }
+
+    /* Winner Highlight */
+    .cell-btn.winner {
+        background-color: rgba(255,255,255,0.2);
+        border: 2px solid white;
+        transform: scale(1.05);
+        z-index: 10;
+    }
+
+    /* 6. Right Side Panel */
+    .side-panel {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+        padding-top: 20px;
+    }
+
+    /* STATUS BOX (Bold & Colorful) */
+    .status-box {
+        background: linear-gradient(135deg, #6366f1, #d946ef); /* Purple-Pink Gradient */
+        padding: 25px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        color: white;
+        border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .status-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .status-message {
+        font-size: 2rem;
+        font-weight: 800; /* Extra Bold */
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        line-height: 1.1;
+    }
+
+    /* Buttons */
+    .btn-action {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        text-align: center;
+        border-radius: 10px;
         font-weight: bold;
+        text-decoration: none;
+        margin-bottom: 10px;
+        transition: transform 0.2s;
     }
 
-    .o-marker {
-        color: red;
-        font-size: 3rem;
-        font-weight: bold;
+    .btn-new {
+        background-color: #10b981; /* Green */
+        color: white;
+        box-shadow: 0 4px 0 #059669;
     }
 
-    /* Remove outer borders */
-    .game-cell:first-child {
-        border-left: none;
+        .btn-new:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+
+    .btn-back {
+        background-color: #475569; /* Gray */
+        color: white;
+        box-shadow: 0 4px 0 #334155;
     }
 
-    .game-cell:last-child {
-        border-right: none;
-    }
+        .btn-back:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
 
-    tr:first-child .game-cell {
-        border-top: none;
-    }
-
-    tr:last-child .game-cell {
-        border-bottom: none;
-    }
 </style>
 
-<div class="container mt-5 text-center">
-    <div class="card shadow" style="max-width: 500px; margin: auto;">
-        <div class="card-header bg-white">
-            <h2>Tic Tac Toe</h2>
-        </div>
-        <div class="card-body">
-            <h4 class="mb-4">@Model.Message</h4>
+<div class="game-container">
 
-            <form method="post" asp-action="MakeMove" asp-route-id="@ViewBag.GameId">
-                <table class="m-auto" style="border-collapse: collapse;">
-                    @for (int i = 0; i < 3; i++)
+    <form method="post" asp-action="PlayMove" asp-route-id="@Model.Id">
+        <input type="hidden" name="difficulty" value="@difficulty" />
+
+        <div class="game-board">
+            @for (int i = 0; i < 3; i++)
+            {
+                @for (int j = 0; j < 3; j++)
+                {
+                    int index = (i * 3) + j;
+                    char mark = boardChars[index];
+                    bool isWinningCell = winningIndices.Contains(index);
+                    bool isTaken = mark != '-';
+
+                    string cellClasses = "cell-btn";
+                    if (!isTaken) { cellClasses += " empty"; }
+                    if (isWinningCell) { cellClasses += " winner"; }
+
+                    if (isTaken || isGameOver)
                     {
-                        <tr>
-                            @for (int j = 0; j < 3; j++)
+                        <div class="@cellClasses">
+                            @if (mark == 'X')
                             {
-                                <td class="game-cell">
-                                    @if (Model.Board[i, j] == ' ' && !isGameOver)
-                                    {
-                                        <button type="submit" name="row" value="@i" formaction="/Game/MakeMove?id=@ViewBag.GameId&row=@i&col=@j">
-                                            &nbsp;
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <span class="@(Model.Board[i, j] == 'X' ? "x-marker" : "o-marker")">
-                                            @Model.Board[i, j]
-                                        </span>
-                                    }
-                                </td>
+                                <span class="mark-x">X</span>
                             }
-                        </tr>
+                            else if (mark == 'O')
+                            {
+                                <span class="mark-o">O</span>
+                            }
+                        </div>
                     }
-                </table>
-            </form>
+                    else
+                    {
+                        <button type="submit" name="row" value="@i"
+                                formaction="/Game/PlayMove?id=@Model.Id&row=@i&col=@j&difficulty=@difficulty"
+                                class="@cellClasses">
+                        </button>
+                    }
+                }
+            }
         </div>
-        <div class="card-footer">
-            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-            <a asp-action="CreateGame" class="btn btn-primary">New Game</a>
+    </form>
+
+    <div class="side-panel">
+
+        <div class="status-box">
+            <div class="status-label">Current Status</div>
+            <div class="status-message">
+                <span>@Model.Message</span>
+            </div>
+        </div>
+
+        <div style="text-align:center; color:#94a3b8; font-size: 0.9rem;">
+            Opponent: <strong style="color:white">@difficulty</strong>
+        </div>
+
+        <div>
+            @if (isGameOver)
+            {
+                <a asp-action="CreateGame" asp-controller="Game" asp-route-difficulty="@difficulty" class="btn-action btn-new">
+                    Start New Game
+                </a>
+            }
+
+            <a asp-action="VsComputer" asp-controller="Game" class="btn-action btn-back">
+                Back to Menu
+            </a>
         </div>
     </div>
+
 </div>
+
+@if (Model.CurrentPlayer == "O" && difficulty != "Human" && !isGameOver)
+{
+    <form id="computerForm" asp-action="ComputerMove" method="post">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <input type="hidden" name="difficulty" value="@difficulty" />
+    </form>
+
+    <script>
+        document.querySelectorAll('.cell-btn').forEach(btn => btn.disabled = true);
+        setTimeout(function() {
+            document.getElementById('computerForm').submit();
+        }, 1000);
+    </script>
+}

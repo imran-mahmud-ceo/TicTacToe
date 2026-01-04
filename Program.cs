@@ -1,32 +1,40 @@
 using Microsoft.EntityFrameworkCore;
 using TicTacToe.Data;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // -----------------------------------------------------------------------------
-// 1. DATABASE CONFIGURATION (Added this part)
+// 1. DATABASE CONFIGURATION
 // -----------------------------------------------------------------------------
-// This reads the connection string from appsettings.json
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetConnectionString("TicTacToeContextConnection")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string not found.");
 
-// This configures the app to use SQL Server
-builder.Services.AddDbContext<GameContext>(options =>
+// FIX: Switch to TicTacToeContext (The one that has both Users AND Games)
+builder.Services.AddDbContext<TicTacToeContext>(options =>
     options.UseSqlServer(connectionString));
 
 // -----------------------------------------------------------------------------
-// 2. Add services to the container
+// 2. IDENTITY CONFIGURATION
+// -----------------------------------------------------------------------------
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+        options.SignIn.RequireConfirmedAccount = false)
+    .AddEntityFrameworkStores<TicTacToeContext>(); // FIX: Connect Identity to TicTacToeContext
+
+// -----------------------------------------------------------------------------
+// 3. Add services to the container
 // -----------------------------------------------------------------------------
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
 // -----------------------------------------------------------------------------
-// 3. Configure the HTTP request pipeline
+// 4. Configure the HTTP request pipeline
 // -----------------------------------------------------------------------------
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios.
     app.UseHsts();
 }
 
@@ -35,11 +43,19 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// -----------------------------------------------------------------------------
+// 5. ENABLE SECURITY
+// -----------------------------------------------------------------------------
+app.UseAuthentication();
 app.UseAuthorization();
 
-// Changed the default controller from 'Home' to 'Game' so it opens your game list first
+// -----------------------------------------------------------------------------
+// 6. ROUTES
+// -----------------------------------------------------------------------------
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Game}/{action=Index}/{id?}");
+
+app.MapRazorPages();
 
 app.Run();

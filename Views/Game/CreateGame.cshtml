@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Start New Game";
+}
+
+<div class="text-center mt-5">
+    <h1 class="display-4 mb-4">Choose Game Mode</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">👨‍💻 vs 👨‍💻</h5>
+                    <p class="card-text">Play with a friend locally.</p>
+                    <a asp-action="CreateGame" asp-route-difficulty="Human" class="btn btn-primary w-100">Play Friends</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">🤖 Easy</h5>
+                    <p class="card-text">Bot plays randomly.</p>
+                    <a asp-action="CreateGame" asp-route-difficulty="Easy" class="btn btn-success w-100">Play Easy</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">🤖 Medium</h5>
+                    <p class="card-text">A balanced challenge.</p>
+                    <a asp-action="CreateGame" asp-route-difficulty="Medium" class="btn btn-warning w-100">Play Medium</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">😈 Hard</h5>
+                    <p class="card-text">Unbeatable AI.</p>
+                    <a asp-action="CreateGame" asp-route-difficulty="Hard" class="btn btn-danger w-100">Play Hard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,130 @@
+﻿@{
+    ViewData["Title"] = "Play vs Computer";
+}
+
+<style>
+    /* Custom Dark Theme Styles for this page */
+    body {
+        background-color: #0f172a; /* Match Game Page Dark Blue */
+        color: white;
+    }
+
+    .card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+        .card:hover {
+            transform: translateY(-5px); /* Slightly reduced hover lift */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+
+    .icon-large {
+        font-size: 3rem; /* Reduced from 4rem */
+        margin-bottom: 0.5rem; /* Reduced margin */
+    }
+
+    /* Difficulty Colors */
+    .text-easy {
+        color: #10b981;
+        text-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .text-medium {
+        color: #f59e0b;
+        text-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+
+    .text-hard {
+        color: #ef4444;
+        text-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-easy {
+        background-color: #10b981;
+        color: white;
+        border: none;
+    }
+
+    .btn-medium {
+        background-color: #f59e0b;
+        color: white;
+        border: none;
+    }
+
+    .btn-hard {
+        background-color: #ef4444;
+        color: white;
+        border: none;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        color: white;
+    }
+</style>
+
+<div class="container text-center py-4">
+    <h2 class="fw-bold mb-2">Choose Your Opponent</h2>
+    <p class="text-secondary mb-4">Select a difficulty level to start the match.</p>
+
+    <div class="row justify-content-center g-3">
+
+        <div class="col-md-4">
+            <div class="card h-100 p-3">
+                <div class="card-body d-flex flex-column">
+                    <div class="icon-large">😊</div>
+                    <h3 class="text-easy fw-bold h4">Easy</h3>
+                    <p class="text-secondary small mb-3 flex-grow-1">
+                        The computer moves randomly. Perfect for kids or a quick win.
+                    </p>
+                    <a asp-action="CreateGame" asp-controller="Game" asp-route-difficulty="Easy"
+                       class="btn btn-easy w-100 py-2 fw-bold stretched-link mt-auto">
+                        Play Easy
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 p-3">
+                <div class="card-body d-flex flex-column">
+                    <div class="icon-large">🤔</div>
+                    <h3 class="text-medium fw-bold h4">Medium</h3>
+                    <p class="text-secondary small mb-3 flex-grow-1">
+                        A balanced challenge. It tries to win but sometimes makes mistakes.
+                    </p>
+                    <a asp-action="CreateGame" asp-controller="Game" asp-route-difficulty="Medium"
+                       class="btn btn-medium w-100 py-2 fw-bold stretched-link mt-auto">
+                        Play Medium
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 p-3">
+                <div class="card-body d-flex flex-column">
+                    <div class="icon-large">🤖</div>
+                    <h3 class="text-hard fw-bold h4">Impossible</h3>
+                    <p class="text-secondary small mb-3 flex-grow-1">
+                        Powered by the Minimax Algorithm. You can draw, but you cannot win.
+                    </p>
+                    <a asp-action="CreateGame" asp-controller="Game" asp-route-difficulty="Hard"
+                       class="btn btn-hard w-100 py-2 fw-bold stretched-link mt-auto">
+                        Play Hard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-4">
+        <a asp-controller="Home" asp-action="Index" class="text-secondary text-decoration-none">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
